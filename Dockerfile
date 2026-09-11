@@ -3,6 +3,10 @@ WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@11.19.0 --activate
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 RUN pnpm install --frozen-lockfile
+# Os scripts executados fora do Next.js precisam de uma cópia física do
+# cliente PostgreSQL; no node_modules do pnpm ele é apenas um link simbólico.
+RUN mkdir -p /runtime-node-modules \
+    && cp -LR node_modules/postgres /runtime-node-modules/postgres
 
 FROM dependencies AS builder
 WORKDIR /app
@@ -23,6 +27,8 @@ RUN groupadd --system --gid 1001 nodejs \
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+# O bundle standalone não rastreia imports dos scripts copiados separadamente.
+COPY --from=dependencies --chown=nextjs:nodejs /runtime-node-modules/postgres ./node_modules/postgres
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/backup-database.mjs ./scripts/backup-database.mjs
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/migrate-sqlite-to-postgres.mjs ./scripts/migrate-sqlite-to-postgres.mjs
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/start-server.mjs ./scripts/start-server.mjs
