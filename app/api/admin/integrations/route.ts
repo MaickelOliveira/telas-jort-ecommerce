@@ -4,7 +4,7 @@ import { adminCookie, parseSession } from "@/lib/admin-auth";
 import { getRuntimeIntegrationConfig, listSafeRuntimeIntegrationConfigs } from "@/lib/integration-config";
 import { integrationProviders, saveIntegrationConfig, saveIntegrationTest, type IntegrationProvider } from "@/lib/database";
 import { testIntegrationConnection } from "@/lib/integrations/test-connection";
-import { allowRequest } from "@/lib/rate-limit";
+import { allowRequest, sameOriginRequest } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -42,13 +42,6 @@ function sessionFor(request: NextRequest) {
   return parseSession(request.cookies.get(adminCookie.name)?.value);
 }
 
-function sameOrigin(request: NextRequest) {
-  const origin = request.headers.get("origin");
-  if (!origin) return true;
-  const expected = process.env.APP_URL ? new URL(process.env.APP_URL).origin : request.nextUrl.origin;
-  return origin === expected;
-}
-
 function safeConfig(provider: IntegrationProvider) {
   const config = getRuntimeIntegrationConfig(provider);
   return {
@@ -73,7 +66,7 @@ export async function POST(request: NextRequest) {
   if (!allowRequest(request, "admin-integrations", 40, 10 * 60_000)) return NextResponse.json({ error: "Muitas alterações. Aguarde alguns minutos." }, { status: 429 });
   const session = sessionFor(request);
   if (!session) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
-  if (!sameOrigin(request)) return NextResponse.json({ error: "Origem da solicitação inválida" }, { status: 403 });
+  if (!sameOriginRequest(request)) return NextResponse.json({ error: "Origem da solicitação inválida" }, { status: 403 });
   try {
     const raw = await request.json() as { action?: unknown };
     if (raw?.action === "test") {

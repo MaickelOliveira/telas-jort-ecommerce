@@ -1,7 +1,7 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { signValue, verifyPassword, verifySignedValue } from "@/lib/security";
+import { safeEqualText, signValue, verifyPassword, verifySignedValue } from "@/lib/security";
 
 const COOKIE_NAME = "tj_admin_session";
 type Session = { email: string; role: "owner" | "manager" | "demo"; exp: number };
@@ -17,8 +17,22 @@ export function checkLoginRateLimit(key: string) {
 
 export function authenticateAdmin(email: string, password: string) {
   const expectedEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  if (!expectedEmail || email.trim().toLowerCase() !== expectedEmail) return false;
+
   const passwordHash = process.env.ADMIN_PASSWORD_HASH;
-  return Boolean(expectedEmail && passwordHash && email.trim().toLowerCase() === expectedEmail && verifyPassword(password, passwordHash));
+  const plainPassword = process.env.ADMIN_PASSWORD;
+  let hashMatches = false;
+  if (passwordHash) {
+    try {
+      hashMatches = passwordHash.startsWith("scrypt:") || passwordHash.startsWith("scrypt$")
+        ? verifyPassword(password, passwordHash)
+        : safeEqualText(password, passwordHash);
+    } catch {
+      hashMatches = false;
+    }
+  }
+
+  return hashMatches || Boolean(plainPassword && safeEqualText(password, plainPassword));
 }
 
 export function createSession(email: string, role: Session["role"] = "owner") {

@@ -7,10 +7,11 @@ export const dynamic = "force-dynamic";
 
 export default function SettingsPage() {
   const settings = getStoreSettings();
+  const adminAccessConfigured = Boolean(process.env.ADMIN_EMAIL && (process.env.ADMIN_PASSWORD_HASH || process.env.ADMIN_PASSWORD));
   const checks = [
     { title: "HTTPS automático", description: process.env.APP_URL?.startsWith("https://") ? "Configurado para o domínio de produção" : "Será ativado pelo Caddy quando o domínio apontar para a VPS", ready: Boolean(process.env.APP_URL?.startsWith("https://")), icon: LockKeyhole },
     { title: "Dados pessoais cifrados", description: process.env.DATA_ENCRYPTION_KEY ? "Chave AES-256-GCM carregada no servidor" : "Chave de produção ainda não carregada", ready: Boolean(process.env.DATA_ENCRYPTION_KEY), icon: ShieldCheck },
-    { title: "Acesso administrativo", description: process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD_HASH ? "E-mail e senha segura configurados" : "Execute o assistente de configuração da VPS", ready: Boolean(process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD_HASH), icon: KeyRound },
+    { title: "Acesso administrativo", description: adminAccessConfigured ? "E-mail e senha segura configurados" : "Configure ADMIN_EMAIL e ADMIN_PASSWORD no servidor", ready: adminAccessConfigured, icon: KeyRound },
     { title: "Cópias de segurança", description: "O comando de backup está incluído; confirme o cron e a cópia externa na VPS", ready: false, icon: DatabaseBackup },
   ];
   return <div className="mx-auto max-w-[1200px]">

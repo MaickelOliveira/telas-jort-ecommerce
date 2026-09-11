@@ -49,6 +49,8 @@ Não cadastre credenciais reais no banco de demonstração. Para um acesso local
 pnpm admin:create -- seu-email@dominio.com.br
 ```
 
+No EasyPanel também é possível informar `ADMIN_EMAIL` e `ADMIN_PASSWORD` diretamente. O hash continua sendo a opção recomendada para uma VPS administrada manualmente.
+
 ## Publicar na VPS
 
 Siga [GUIA-VPS.md](./GUIA-VPS.md). O fluxo resumido é:
