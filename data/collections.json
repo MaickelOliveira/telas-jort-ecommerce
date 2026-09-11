@@ -1,0 +1,27 @@
+[
+  {
+    "title": "Telas",
+    "handle": "telas",
+    "rule_tag": "telas"
+  },
+  {
+    "title": "Arames",
+    "handle": "arames",
+    "rule_tag": "arames"
+  },
+  {
+    "title": "Acessórios",
+    "handle": "acessorios",
+    "rule_tag": "acessorios"
+  },
+  {
+    "title": "Ferramentas",
+    "handle": "ferramentas",
+    "rule_tag": "ferramentas"
+  },
+  {
+    "title": "EPIs",
+    "handle": "epis",
+    "rule_tag": "epis"
+  }
+]

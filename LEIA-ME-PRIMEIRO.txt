@@ -1,0 +1,30 @@
+TELAS JORT — COMEÇAR AQUI
+
+1. Para apenas olhar no computador:
+   - abra o Terminal dentro desta pasta;
+   - execute: corepack enable
+   - execute: pnpm install
+   - execute: ALLOW_DEMO_ADMIN=true pnpm dev
+   - abra no Chrome: http://localhost:3000
+   - painel: http://localhost:3000/admin
+
+2. Para colocar na internet:
+   siga o arquivo GUIA-VPS.md.
+
+3. Para Mercado Pago, Appmax, Melhor Envio e Google:
+   siga o arquivo GUIA-INTEGRACOES.md e use Admin > Integrações.
+
+4. Para Mercado Livre e Shopee:
+   use Admin > Marketplaces. Primeiro salve e teste as credenciais com a
+   integração desligada; somente habilite depois de conferir os SKUs.
+
+5. Antes de aceitar dinheiro real:
+   conclua todo o CHECKLIST-PRODUCAO.md.
+
+IMPORTANTE
+- O checkout ativo desta versão é Mercado Pago.
+- Appmax já possui cadastro, teste de autenticação e webhook, mas o checkout
+  Appmax JS ainda precisa ser homologado antes de ser ativado.
+- Melhor Envio já calcula cotações; compra automática de etiqueta ainda depende
+  da homologação física dos pesos e volumes.
+- Nunca envie o arquivo .env.production ou o banco de dados para o GitHub.

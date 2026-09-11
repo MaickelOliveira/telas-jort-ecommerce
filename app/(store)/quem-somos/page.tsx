@@ -1,0 +1,5 @@
+import type { Metadata } from "next";
+import { ContentPage } from "@/components/store/content-page";
+
+export const metadata: Metadata = { title: "Quem somos", description: "Conheça a Telas Jort, especializada em telas, arames e soluções para cercamento." };
+export default function AboutPage() { return <ContentPage title="Quem somos" intro="A Telas Jort atende projetos de cercamento rural, residencial e comercial em Campo Mourão e envia produtos para todo o Brasil."><section><h2>Soluções para cada projeto</h2><p>Trabalhamos com telas soldadas, arames, acessórios, ferramentas e equipamentos de proteção. Nosso objetivo é ajudar cada cliente a comprar a quantidade adequada para a instalação, inclusive nos produtos vendidos por metro corrido ou metro quadrado.</p></section><section><h2>Atendimento especializado</h2><p>Quando houver dúvida sobre malha, altura, comprimento, peso ou forma de envio, nossa equipe pode conferir os dados antes do corte e da expedição.</p></section><section><h2>Onde estamos</h2><p>Av. Cap. Índio Bandeira, 2554 — Centro, Campo Mourão/PR — CEP 87308-830.</p></section></ContentPage>; }

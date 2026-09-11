@@ -1,0 +1,8 @@
+import Link from "next/link";
+import { CheckCircle2, MessageCircle, PackageSearch } from "lucide-react";
+import { CompactPageBanner } from "@/components/store/compact-page-banner";
+
+export default async function SuccessPage({ searchParams }: { searchParams: Promise<{ pedido?: string }> }) {
+  const { pedido = "—" } = await searchParams;
+  return <main className="page-shell min-h-[62vh] py-8 sm:py-10"><CompactPageBanner eyebrow="Compra concluída" title="Pedido recebido" text="Seu pedido foi registrado e agora nossa equipe dará continuidade à preparação." /><div className="mx-auto max-w-xl py-10 text-center sm:py-12"><CheckCircle2 className="mx-auto size-16 text-emerald-600 sm:size-20" /><span className="mt-6 inline-block rounded-full bg-emerald-100 px-4 py-2 text-sm font-bold text-emerald-800">Tudo certo</span><h2 className="display-title mt-5 text-3xl sm:text-5xl">Obrigado pela compra!</h2><p className="mt-4 text-base leading-7 text-zinc-600 sm:text-lg sm:leading-8">Pedido <strong>#{pedido}</strong>. Acompanhe o pagamento, a preparação e a entrega pela sua conta.</p><div className="mt-8 grid gap-3 sm:flex sm:flex-wrap sm:justify-center"><Link href={`/conta/pedidos/${encodeURIComponent(pedido)}`} className="flex items-center justify-center gap-2 rounded-xl bg-[#fff100] px-6 py-4 font-extrabold"><PackageSearch /> Acompanhar pedido</Link><Link href="/produtos" className="rounded-xl border border-zinc-300 px-6 py-4 font-extrabold">Continuar comprando</Link><a href="https://wa.me/5544991572075" className="flex items-center justify-center gap-2 rounded-xl bg-[#25d366] px-6 py-4 font-bold text-white"><MessageCircle /> Falar com a loja</a></div></div></main>;
+}

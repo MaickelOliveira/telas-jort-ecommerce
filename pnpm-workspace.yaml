@@ -1,0 +1,26 @@
+packages:
+  - "."
+
+minimumReleaseAge: 10080
+minimumReleaseAgeIgnoreMissingTime: false
+trustLockfile: false
+strictDepBuilds: true
+autoInstallPeers: false
+
+overrides:
+  baseline-browser-mapping: "2.11.0"
+  browserslist: "4.28.7"
+
+allowBuilds:
+  esbuild: true
+  fsevents: true
+  sharp: true
+  unrs-resolver: true
+  workerd: true
+
+storeDir: ${SITES_PNPM_SHARED_STORE:-.sites-runtime/pnpm-store}
+cacheDir: ${SITES_PNPM_SHARED_STORE:-.sites-runtime/pnpm-store}/policy-cache
+enableGlobalVirtualStore: false
+packageImportMethod: clone-or-copy
+verifyDepsBeforeRun: false
+optimisticRepeatInstall: false

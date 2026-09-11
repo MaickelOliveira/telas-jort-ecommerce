@@ -1,0 +1,19 @@
+{
+  email {$ADMIN_EMAIL}
+  admin off
+}
+
+{$DOMAIN} {
+  encode zstd gzip
+
+  request_body {
+    max_size 2MB
+  }
+
+  reverse_proxy app:3000
+
+  log {
+    output stdout
+    format json
+  }
+}
