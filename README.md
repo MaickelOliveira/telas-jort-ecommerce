@@ -49,7 +49,7 @@ Não cadastre credenciais reais no banco de demonstração. Para um acesso local
 pnpm admin:create -- seu-email@dominio.com.br
 ```
 
-No EasyPanel também é possível informar `ADMIN_EMAIL` e `ADMIN_PASSWORD` diretamente. O hash continua sendo a opção recomendada para uma VPS administrada manualmente.
+No EasyPanel também é possível informar somente `ADMIN_EMAIL` e `ADMIN_PASSWORD` diretamente. Nesse modo, a chave da sessão administrativa é derivada da credencial. Definir um `SESSION_SECRET` longo e independente continua sendo recomendado, assim como usar o hash em uma VPS administrada manualmente.
 
 ## Publicar na VPS
 

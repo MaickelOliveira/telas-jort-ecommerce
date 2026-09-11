@@ -5,6 +5,19 @@ function requiredSecret(name: string, developmentFallback: string) {
   const value = process.env[name];
   if (value) return value;
   if (process.env.NODE_ENV !== "production") return developmentFallback;
+
+  // EasyPanel users can start with the simple ADMIN_EMAIL + ADMIN_PASSWORD
+  // setup. Keep the session signing key independent through domain-separated
+  // derivation, while still allowing SESSION_SECRET to override it.
+  if (name === "SESSION_SECRET") {
+    const adminCredential = process.env.ADMIN_PASSWORD_HASH || process.env.ADMIN_PASSWORD;
+    if (adminCredential) {
+      return createHash("sha256")
+        .update(`telas-jort:admin-session:v1:${adminCredential}`)
+        .digest("base64url");
+    }
+  }
+
   throw new Error(`Variável obrigatória ausente: ${name}`);
 }
 

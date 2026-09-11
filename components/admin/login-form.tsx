@@ -13,7 +13,7 @@ export function LoginForm({ demoEnabled }: { demoEnabled: boolean }) {
   const submit = async (demo = false) => {
     setLoading(true); setError("");
     try {
-      const response = await fetch("/api/admin/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(demo ? { demo: true } : { email, password }) });
+      const response = await fetch("/api/admin/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(demo ? { demo: true } : { email: email.trim(), password }) });
       const result = await response.json() as { error?: string };
       if (!response.ok) throw new Error(result.error || "Acesso negado");
       router.push("/admin"); router.refresh();
