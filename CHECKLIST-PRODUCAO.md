@@ -42,7 +42,7 @@
 - [ ] Acesso SSH somente por chave e acesso de recuperação testado.
 - [ ] Firewall expondo apenas 22, 80 e 443.
 - [ ] Atualizações automáticas de segurança do sistema configuradas.
-- [ ] Tabelas criadas no Supabase e conexão `DATABASE_URL` validada pelo health check.
+- [ ] Tabelas criadas no Supabase e conexão `DATABASE_URL` validada em `/api/readiness`.
 - [ ] Backup do banco Supabase configurado e exportação externa protegida.
 - [ ] Restauração de um backup do PostgreSQL testada.
 - [ ] `DATA_ENCRYPTION_KEY` guardada fora da VPS.

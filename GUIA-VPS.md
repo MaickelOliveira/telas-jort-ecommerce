@@ -56,7 +56,15 @@ Para verificar a saúde:
 curl -fsS https://loja.seudominio.com.br/api/health
 ```
 
-A resposta esperada é `{"status":"ok"}`.
+Esse endereço confirma que o processo web está ativo. Para validar também a
+conexão com o Supabase, consulte:
+
+```bash
+curl -fsS https://loja.seudominio.com.br/api/readiness
+```
+
+As respostas esperadas são `{"status":"ok"}` no health check e
+`{"status":"ready","database":"connected"}` na verificação do banco.
 
 ## 5. Conectar pagamentos, fretes e Google
 
