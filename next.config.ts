@@ -2,9 +2,6 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  outputFileTracingIncludes: {
-    "/api/admin/supabase/schema": ["./db/supabase-schema.sql"],
-  },
   poweredByHeader: false,
   reactStrictMode: true,
   experimental: { serverActions: { bodySizeLimit: "1mb" } },

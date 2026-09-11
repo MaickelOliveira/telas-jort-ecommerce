@@ -21,13 +21,13 @@ export async function POST(request: NextRequest) {
     const demo = "demo" in input;
     if (demo && !demoAllowed) return NextResponse.json({ error: "Demonstração desativada." }, { status: 403 });
     if (!("demo" in input) && !authenticateAdmin(input.email, input.password)) {
-      try { audit("anonymous", "admin.login_failed"); } catch (error) { console.error("[admin-login] Falha ao gravar auditoria de acesso negado", error); }
+      try { await audit("anonymous", "admin.login_failed"); } catch (error) { console.error("[admin-login] Falha ao gravar auditoria de acesso negado", error); }
       return NextResponse.json({ error: "E-mail ou senha incorretos." }, { status: 401 });
     }
     const email = "demo" in input ? "demonstracao@telasjort.local" : input.email.toLowerCase();
     const response = NextResponse.json({ ok: true });
     response.cookies.set(adminCookie.name, createSession(email, demo ? "demo" : "owner"), adminCookie.options);
-    try { audit(email, "admin.login_success"); } catch (error) { console.error("[admin-login] Falha ao gravar auditoria de acesso autorizado", error); }
+    try { await audit(email, "admin.login_success"); } catch (error) { console.error("[admin-login] Falha ao gravar auditoria de acesso autorizado", error); }
     return response;
   } catch (error) {
     console.error("[admin-login] Não foi possível criar a sessão administrativa", error);

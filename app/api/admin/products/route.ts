@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
   try {
     const input = schema.parse(await request.json());
     const id = input.id || input.sku.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-    saveProductConfig(id, input, session.email);
+    await saveProductConfig(id, input, session.email);
     return NextResponse.json({ ok: true, id });
   } catch (error) {
     return NextResponse.json({ error: error instanceof z.ZodError ? "Confira os campos obrigatórios e os valores informados." : "Não foi possível salvar." }, { status: 400 });

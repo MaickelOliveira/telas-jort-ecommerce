@@ -19,8 +19,8 @@ export async function POST(request: NextRequest) {
   if (!sameOriginRequest(request)) return NextResponse.json({ error: "Origem inválida." }, { status: 403 });
   try {
     const input = schema.parse(await request.json());
-    if (getCustomerAccountByEmail(input.email)) return NextResponse.json({ error: "Este e-mail já possui cadastro. Entre com sua senha." }, { status: 409 });
-    const customer = createCustomerAccount({ ...input, passwordHash: hashPassword(input.password) });
+    if (await getCustomerAccountByEmail(input.email)) return NextResponse.json({ error: "Este e-mail já possui cadastro. Entre com sua senha." }, { status: 409 });
+    const customer = await createCustomerAccount({ ...input, passwordHash: hashPassword(input.password) });
     const response = NextResponse.json({ ok: true, customer: { name: customer.name, email: customer.email } });
     response.cookies.set(customerCookie.name, createCustomerSession(customer.id, customer.email), customerCookie.options);
     return response;

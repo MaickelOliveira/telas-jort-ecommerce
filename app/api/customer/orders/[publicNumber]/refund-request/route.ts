@@ -14,11 +14,11 @@ export async function POST(request: NextRequest, context: { params: Promise<{ pu
   if (!session) return NextResponse.json({ error: "Entre novamente na sua conta." }, { status: 401 });
   try {
     const { publicNumber } = await context.params;
-    const order = getStoredOrderForCustomer(publicNumber, session.customerId);
+    const order = await getStoredOrderForCustomer(publicNumber, session.customerId);
     if (!order) return NextResponse.json({ error: "Pedido não encontrado." }, { status: 404 });
     const input = schema.parse(await request.json());
-    const refundRequest = createCustomerRefundRequest({ orderId: order.id, customerAccountId: session.customerId, reason: input.reason });
-    audit(session.email, "customer.refund_requested", order.public_number, { refundRequestId: refundRequest.id });
+    const refundRequest = await createCustomerRefundRequest({ orderId: order.id, customerAccountId: session.customerId, reason: input.reason });
+    await audit(session.email, "customer.refund_requested", order.public_number, { refundRequestId: refundRequest.id });
     return NextResponse.json({ ok: true, request: { id: refundRequest.id, status: refundRequest.status } });
   } catch (error) {
     const message = error instanceof z.ZodError ? error.issues[0]?.message : error instanceof Error ? error.message : "Não foi possível enviar a solicitação.";

@@ -1,6 +1,6 @@
 # Plataforma de e-commerce Telas Jort
 
-Loja própria para VPS, construída com Next.js, React, TypeScript, SQLite, Docker e Caddy. O projeto não depende de Shopify ou Yampi para exibir a loja. O checkout principal implementado usa Mercado Pago.
+Loja própria para VPS, construída com Next.js, React, TypeScript, PostgreSQL/Supabase, Docker e Caddy. O projeto não depende de Shopify ou Yampi para exibir a loja. O checkout principal implementado usa Mercado Pago.
 
 ## O que já funciona
 
@@ -13,6 +13,7 @@ Loja própria para VPS, construída com Next.js, React, TypeScript, SQLite, Dock
 - Cotação real de frete pelo Melhor Envio e retirada na loja.
 - Feed XML para Google Merchant Center em `/feeds/google-shopping.xml`.
 - Painel com pedidos, clientes, produtos, configurações, acessos, vendas e visitantes ativos.
+- Supabase como banco principal para clientes, pedidos, produtos, cupons, integrações e analytics.
 - Central administrativa para credenciais de Mercado Pago, Appmax, Melhor Envio, Google Merchant e contratos diretos.
 - Área de Marketplaces para Mercado Livre e Shopee, com credenciais cifradas, teste oficial de conta e preparação dos produtos por SKU/medida.
 - Docker Compose, HTTPS automático, health check, CI do GitHub e publicação manual pela GitHub Action.
@@ -34,6 +35,8 @@ O painel não apresenta uma conexão como ativa sem as credenciais exigidas. Em 
 ## Abrir localmente
 
 Pré-requisito: Node.js 22.13 ou superior.
+
+Crie as tabelas executando `db/supabase-schema.sql` no SQL Editor do Supabase e informe a `DATABASE_URL` do **Session pooler** em `.env.local`.
 
 ```bash
 corepack enable
@@ -71,8 +74,7 @@ pnpm typecheck
 pnpm lint
 pnpm audit:prod
 pnpm build
-pnpm db:init
-pnpm backup
+pnpm db:migrate:legacy
 ```
 
 ## Arquivos importantes
@@ -81,10 +83,11 @@ pnpm backup
 - `GUIA-INTEGRACOES.md`: onde obter e colar cada credencial.
 - `CHECKLIST-PRODUCAO.md`: tudo que precisa ser conferido antes de aceitar dinheiro real.
 - `.env.example`: exemplo sem segredos.
+- `db/supabase-schema.sql`: estrutura completa do banco principal.
 - `data/catalog.json`: catálogo original usado como base.
 
 ## Segurança e responsabilidade operacional
 
-As credenciais privadas e os dados pessoais do pedido são cifrados com AES-256-GCM. Senhas usam scrypt; a sessão administrativa usa cookie HttpOnly, SameSite e expiração. Há limitação de tentativas, validação de origem, CSP, headers defensivos, confirmação de webhooks pela API do provedor e isolamento do aplicativo em uma rede Docker interna.
+As credenciais privadas e os dados pessoais do pedido são cifrados com AES-256-GCM antes de chegar ao Supabase. Senhas usam scrypt; a sessão administrativa usa cookie HttpOnly, SameSite e expiração. Há limitação de tentativas, validação de origem, CSP, headers defensivos, confirmação de webhooks pela API do provedor e isolamento do aplicativo em uma rede Docker interna.
 
 Isso reduz bastante os riscos, mas nenhum site é “impossível de invadir”. A operação precisa manter a VPS atualizada, usar senha exclusiva, controlar o acesso SSH, monitorar logs e testar backups externos. A chave `DATA_ENCRYPTION_KEY` não pode ser perdida: sem ela, dados e credenciais cifrados não podem ser recuperados.

@@ -33,8 +33,8 @@ export const defaultStoreSettings: StoreSettings = {
   largeOrderQuantityThreshold: "",
 };
 
-export function getStoreSettings(): StoreSettings {
-  const stored = getStoredStoreSettings();
+export async function getStoreSettings(): Promise<StoreSettings> {
+  const stored = await getStoredStoreSettings();
   if (!stored) return defaultStoreSettings;
   const safe = Object.fromEntries(Object.entries(stored).filter((entry): entry is [string, string] => typeof entry[1] === "string"));
   return { ...defaultStoreSettings, ...safe };

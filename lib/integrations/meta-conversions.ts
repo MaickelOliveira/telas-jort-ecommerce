@@ -48,7 +48,7 @@ function hashedArray(value?: string) {
 }
 
 export async function sendMetaConversionEvent(input: MetaConversionInput) {
-  const config = getRuntimeIntegrationConfig("meta_conversions");
+  const config = await getRuntimeIntegrationConfig("meta_conversions");
   const pixelId = config.publicConfig.pixelId;
   const accessToken = config.secrets.accessToken;
   if (!config.enabled || !pixelId || !accessToken) return { sent: false as const, reason: "disabled" };

@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
   if (!sameOriginRequest(request)) return NextResponse.json({ error: "Origem da solicitação inválida" }, { status: 403 });
   try {
     const input = schema.parse(await request.json());
-    const result = await quoteShipping(input.postalCode, input.items, getRuntimeProducts());
+    const result = await quoteShipping(input.postalCode, input.items, await getRuntimeProducts());
     return NextResponse.json(result, { headers: { "cache-control": "no-store" } });
   } catch (error) {
     const message = error instanceof z.ZodError ? "Confira o CEP e os itens do carrinho." : error instanceof Error ? error.message : "Erro ao calcular o frete.";

@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
   if (session.role !== "owner") return NextResponse.json({ error: "Somente o proprietário pode alterar estes dados." }, { status: 403 });
   try {
     const input = schema.parse(await request.json());
-    saveStoreSettings(input, session.email);
+    await saveStoreSettings(input, session.email);
     return NextResponse.json({ ok: true, settings: input });
   } catch (error) {
     return NextResponse.json({ error: error instanceof z.ZodError ? "Confira os dados informados." : "Não foi possível salvar." }, { status: 400 });

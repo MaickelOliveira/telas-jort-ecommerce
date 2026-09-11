@@ -83,7 +83,7 @@ function disconnected(channel: MarketplaceChannel, accountName: string): Marketp
 }
 
 async function mercadoLivreSnapshot(): Promise<MarketplaceChannelSnapshot> {
-  const config = getRuntimeIntegrationConfig("mercado_livre");
+  const config = await getRuntimeIntegrationConfig("mercado_livre");
   if (!config.enabled || !config.secrets.accessToken) return disconnected("mercado_livre", config.publicConfig.nickname || "Mercado Livre");
 
   const headers = { authorization: `Bearer ${config.secrets.accessToken}`, accept: "application/json" };
@@ -171,8 +171,8 @@ async function mercadoLivreSnapshot(): Promise<MarketplaceChannelSnapshot> {
   }
 }
 
-function shopeeUrl(path: string, query: Record<string, string>) {
-  const config = getRuntimeIntegrationConfig("shopee");
+async function shopeeUrl(path: string, query: Record<string, string>) {
+  const config = await getRuntimeIntegrationConfig("shopee");
   const partnerId = number(config.publicConfig.partnerId);
   const shopId = number(config.publicConfig.shopId);
   const timestamp = Math.floor(Date.now() / 1000);
@@ -190,7 +190,7 @@ function shopeeUrl(path: string, query: Record<string, string>) {
 }
 
 async function shopeeRequest(path: string, query: Record<string, string>, init?: { method?: "GET" | "POST"; body?: unknown }) {
-  const payload = await jsonRequest(shopeeUrl(path, query), {
+  const payload = await jsonRequest(await shopeeUrl(path, query), {
     method: init?.method || "GET",
     headers: { accept: "application/json", ...(init?.body ? { "content-type": "application/json" } : {}) },
     body: init?.body ? JSON.stringify(init.body) : undefined,
@@ -201,7 +201,7 @@ async function shopeeRequest(path: string, query: Record<string, string>, init?:
 }
 
 async function shopeeSnapshot(): Promise<MarketplaceChannelSnapshot> {
-  const config = getRuntimeIntegrationConfig("shopee");
+  const config = await getRuntimeIntegrationConfig("shopee");
   const configured = config.enabled && config.secrets.accessToken && config.secrets.partnerKey && config.publicConfig.partnerId && config.publicConfig.shopId;
   if (!configured) return disconnected("shopee", config.publicConfig.shopName || "Shopee");
 
@@ -309,7 +309,7 @@ export function isMarketplaceProductActive(product: Pick<MarketplaceProduct, "ch
 
 export async function setMarketplaceProductActive(channel: MarketplaceChannel, externalId: string, active: boolean) {
   if (channel === "mercado_livre") {
-    const config = getRuntimeIntegrationConfig("mercado_livre");
+    const config = await getRuntimeIntegrationConfig("mercado_livre");
     if (!config.enabled || !config.secrets.accessToken) throw new Error("Conecte e habilite o Mercado Livre antes de alterar anúncios.");
     const payload = await jsonRequest(`https://api.mercadolibre.com/items/${encodeURIComponent(externalId)}`, {
       method: "PUT",
@@ -324,7 +324,7 @@ export async function setMarketplaceProductActive(channel: MarketplaceChannel, e
     return { active: text(item.status).toLowerCase() === "active", status: text(item.status, active ? "active" : "paused") };
   }
 
-  const config = getRuntimeIntegrationConfig("shopee");
+  const config = await getRuntimeIntegrationConfig("shopee");
   if (!config.enabled || !config.secrets.accessToken || !config.secrets.partnerKey) throw new Error("Conecte e habilite a Shopee antes de alterar anúncios.");
   await shopeeRequest("/api/v2/product/unlist_item", {}, {
     method: "POST",

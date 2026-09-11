@@ -12,7 +12,7 @@ Este guia foi escrito para uma VPS Ubuntu com domínio próprio. Recomenda-se pe
 
 ## 2. Colocar o projeto no GitHub
 
-Use um repositório privado. Não envie `.env.production`, banco SQLite, backups ou chaves para o GitHub; esses arquivos já estão no `.gitignore`.
+O repositório pode ser público porque não contém credenciais. Nunca envie `.env.production`, arquivos do banco antigo, backups ou chaves para o GitHub; esses arquivos já estão no `.gitignore`.
 
 Na VPS, clone o repositório em `/opt/telas-jort` e dê acesso somente ao usuário responsável pelo deploy.
 
@@ -36,7 +36,9 @@ docker run --rm -it --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work node:22-
   node scripts/setup.mjs --domain loja.seudominio.com.br --email dono@seudominio.com.br
 ```
 
-O assistente cria `.env.production` com permissão `600`, mostra uma senha temporária uma única vez e gera chaves aleatórias. Guarde a senha e uma cópia protegida das chaves em um gerenciador de senhas. Nunca envie esse arquivo ao GitHub.
+O assistente cria `.env.production` com permissão `600`, mostra uma senha temporária uma única vez e gera chaves aleatórias. Substitua o valor de `DATABASE_URL` pela URL do **Session pooler** exibida em **Supabase → Connect**, usando a senha do banco codificada para URL. Guarde a senha e uma cópia protegida das chaves em um gerenciador de senhas. Nunca envie esse arquivo ao GitHub.
+
+Antes do primeiro deploy, execute o arquivo `db/supabase-schema.sql` no SQL Editor do projeto Supabase.
 
 ## 4. Subir a loja
 
@@ -77,19 +79,7 @@ Se qualquer item do carrinho estiver sem conferência, o sistema bloqueia o fret
 
 ## 7. Backups
 
-Teste manualmente:
-
-```bash
-sudo /opt/telas-jort/scripts/backup-vps.sh
-```
-
-O script cria uma cópia consistente do SQLite dentro do contêiner e a copia para `/var/backups/telas-jort`, com acesso restrito. Para executar diariamente às 03:15, abra `sudo crontab -e` e acrescente:
-
-```cron
-15 3 * * * /opt/telas-jort/scripts/backup-vps.sh >> /var/log/telas-jort-backup.log 2>&1
-```
-
-Uma cópia na mesma VPS não protege contra perda total do servidor. Configure também uma cópia cifrada externa com a ferramenta/provedor escolhido pela empresa e realize um teste de restauração. Não automatize exclusão de backups externos antes de confirmar a política fiscal e de retenção do cliente.
+O banco principal está no Supabase. Configure e teste os backups do projeto no próprio provedor e mantenha uma cópia externa conforme a política da empresa. O volume `/app/data` é mantido apenas para que a primeira inicialização possa importar automaticamente o antigo arquivo SQLite, caso ele exista.
 
 ## 8. Publicação pelo GitHub
 

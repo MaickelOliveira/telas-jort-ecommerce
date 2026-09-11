@@ -6,8 +6,10 @@ import { requireCustomer } from "@/lib/customer-auth";
 export const metadata: Metadata = { title: "Checkout" };
 export default async function Page() {
   const customer = await requireCustomer("/checkout");
-  const config = getRuntimeIntegrationConfig("mercado_pago");
-  const settings = getStoreSettings();
+  const [config, settings] = await Promise.all([
+    getRuntimeIntegrationConfig("mercado_pago"),
+    getStoreSettings(),
+  ]);
   return <CheckoutPage
     mercadoPagoPublicKey={config.enabled ? config.publicConfig.publicKey : undefined}
     storeWhatsapp={settings.whatsapp}

@@ -9,7 +9,7 @@ export async function createMercadoPagoPayment(input: {
   customer: Record<string, string>;
   paymentData: Record<string, unknown>;
 }) {
-  const config = getRuntimeIntegrationConfig("mercado_pago");
+  const config = await getRuntimeIntegrationConfig("mercado_pago");
   const token = config.enabled ? config.secrets.accessToken : undefined;
   if (input.paymentData.demo === true) {
     if (process.env.NODE_ENV === "production") throw new Error("Pagamentos simulados estão desativados em produção.");
@@ -53,7 +53,7 @@ export async function createMercadoPagoPayment(input: {
 }
 
 export async function fetchMercadoPagoPayment(id: string) {
-  const token = getRuntimeIntegrationConfig("mercado_pago").secrets.accessToken;
+  const token = (await getRuntimeIntegrationConfig("mercado_pago")).secrets.accessToken;
   if (!token) throw new Error("Mercado Pago não configurado.");
   const response = await fetch(`https://api.mercadopago.com/v1/payments/${encodeURIComponent(id)}`, {
     headers: { authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(10_000),
@@ -64,7 +64,7 @@ export async function fetchMercadoPagoPayment(id: string) {
 
 export async function refundMercadoPagoPayment(input: { paymentId: string; amountCents: number; full: boolean; idempotencyKey: string }) {
   if (!input.paymentId || input.paymentId.startsWith("demo-")) throw new Error("Pagamentos de demonstração não movimentam dinheiro e não podem ser estornados.");
-  const config = getRuntimeIntegrationConfig("mercado_pago");
+  const config = await getRuntimeIntegrationConfig("mercado_pago");
   if (!config.enabled || !config.secrets.accessToken) throw new Error("Configure e habilite o Mercado Pago antes de realizar o estorno.");
   const response = await fetch(`https://api.mercadopago.com/v1/payments/${encodeURIComponent(input.paymentId)}/refunds`, {
     method: "POST",

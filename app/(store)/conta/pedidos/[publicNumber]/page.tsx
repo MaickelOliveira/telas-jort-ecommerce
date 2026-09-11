@@ -14,11 +14,13 @@ export const metadata: Metadata = { title: "Detalhes do pedido" };
 export default async function CustomerOrderPage({ params }: { params: Promise<{ publicNumber: string }> }) {
   const customer = await requireCustomer();
   const { publicNumber } = await params;
-  const order = getStoredOrderForCustomer(publicNumber, customer.id);
+  const order = await getStoredOrderForCustomer(publicNumber, customer.id);
   if (!order) notFound();
-  const items = listStoredOrderItems(order.id);
-  const refunds = listRefundRequestsForOrder(order.id);
-  const fiscalDocument = getFiscalDocumentForOrder(order.id);
+  const [items, refunds, fiscalDocument] = await Promise.all([
+    listStoredOrderItems(order.id),
+    listRefundRequestsForOrder(order.id),
+    getFiscalDocumentForOrder(order.id),
+  ]);
   const activeRefund = refunds.find((refund) => ["requested", "processing"].includes(refund.status));
   const refundable = order.status === "paid" && order.refunded_cents < order.total_cents;
   const address = [order.customer.address, order.customer.number, order.customer.district, order.customer.city, order.customer.state, order.customer.postalCode].filter(Boolean).join(", ");

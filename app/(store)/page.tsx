@@ -81,8 +81,8 @@ function BenefitCard({ image, icon: Icon, eyebrow, title, text, href, action }: 
   );
 }
 
-export default function HomePage() {
-  const products = getRuntimeProducts().filter((product) => product.active);
+export default async function HomePage() {
+  const products = (await getRuntimeProducts()).filter((product) => product.active);
   const pickProducts = (handles: string[]) => handles.flatMap((handle) => {
     const product = products.find((item) => item.slug === handle);
     return product ? [product] : [];

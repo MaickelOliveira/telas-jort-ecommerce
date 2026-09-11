@@ -4,8 +4,8 @@ import { getRuntimeIntegrationConfig } from "@/lib/integration-config";
 type TokenCache = { token: string; expiresAt: number };
 type AppmaxGlobal = typeof globalThis & { __appmaxToken?: TokenCache };
 
-function appmaxBases() {
-  const config = getRuntimeIntegrationConfig("appmax");
+async function appmaxBases() {
+  const config = await getRuntimeIntegrationConfig("appmax");
   return {
     config,
     authBase: config.environment === "production" ? "https://auth.appmax.com.br" : "https://auth.sandboxappmax.com.br",
@@ -16,7 +16,7 @@ function appmaxBases() {
 export async function getAppmaxAccessToken() {
   const globals = globalThis as AppmaxGlobal;
   if (globals.__appmaxToken && globals.__appmaxToken.expiresAt > Date.now() + 30_000) return globals.__appmaxToken.token;
-  const { config, authBase } = appmaxBases();
+  const { config, authBase } = await appmaxBases();
   if (!config.secrets.clientId || !config.secrets.clientSecret) throw new Error("Appmax não configurada.");
   const response = await fetch(`${authBase}/oauth2/token`, {
     method: "POST",
@@ -33,7 +33,7 @@ export async function getAppmaxAccessToken() {
 
 export async function fetchAppmaxOrder(orderId: string) {
   if (!/^\d+$/.test(orderId)) throw new Error("Identificador Appmax inválido.");
-  const { apiBase } = appmaxBases();
+  const { apiBase } = await appmaxBases();
   const token = await getAppmaxAccessToken();
   const response = await fetch(`${apiBase}/v1/orders/${orderId}`, {
     headers: { authorization: `Bearer ${token}`, accept: "application/json" },
@@ -47,7 +47,7 @@ export async function fetchAppmaxOrder(orderId: string) {
 
 export async function requestAppmaxRefund(input: { orderId: string; amountCents: number; full: boolean }) {
   if (!/^\d+$/.test(input.orderId)) throw new Error("Identificador Appmax inválido.");
-  const { config, apiBase } = appmaxBases();
+  const { config, apiBase } = await appmaxBases();
   if (!config.enabled) throw new Error("Configure e habilite a Appmax antes de realizar o estorno.");
   const token = await getAppmaxAccessToken();
   const response = await fetch(`${apiBase}/v1/orders/refund-request`, {

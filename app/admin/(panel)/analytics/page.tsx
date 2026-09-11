@@ -11,8 +11,8 @@ function duration(seconds: number) {
   return `${minutes}m ${seconds % 60}s`;
 }
 
-export default function AnalyticsPage() {
-  const analytics = getAdminAnalytics();
+export default async function AnalyticsPage() {
+  const analytics = await getAdminAnalytics();
   const overview = analytics.overview;
   const cards = [
     ["Acessos em 7 dias", overview.accesses.toLocaleString("pt-BR"), "visualizações de página", Eye],

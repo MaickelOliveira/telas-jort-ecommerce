@@ -11,7 +11,7 @@ import { money } from "@/lib/format";
 
 const modeLabel = { unit: "Unidade", fixed_roll: "Rolo fechado", linear_meter: "Metro corrido", square_meter: "Metro quadrado" };
 export default async function ProductsAdminPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-  const allProducts = getRuntimeProducts();
+  const allProducts = await getRuntimeProducts();
   const query = (await searchParams).q?.trim() || "";
   const normalized = query.toLocaleLowerCase("pt-BR");
   const products = normalized ? allProducts.filter((product) => `${product.name} ${product.sku} ${product.category}`.toLocaleLowerCase("pt-BR").includes(normalized)) : allProducts;

@@ -24,6 +24,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/backup-database.mjs ./scripts/backup-database.mjs
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/migrate-sqlite-to-postgres.mjs ./scripts/migrate-sqlite-to-postgres.mjs
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/start-server.mjs ./scripts/start-server.mjs
 USER nextjs
 EXPOSE 3000
-CMD ["node", "server.js"]
+CMD ["node", "scripts/start-server.mjs"]

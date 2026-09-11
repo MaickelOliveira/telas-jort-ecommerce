@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: "Minha conta" };
 
 export default async function CustomerAccountPage() {
   const customer = await requireCustomer();
-  const orders = listStoredOrdersForCustomer(customer.id);
+  const orders = await listStoredOrdersForCustomer(customer.id);
   const paid = orders.filter((order) => order.status === "paid").length;
   return <main className="min-h-[65vh] bg-zinc-100 py-7 sm:py-10"><div className="page-shell">
     <CompactPageBanner eyebrow="Área do cliente" title={`Olá, ${customer.name.split(" ")[0]}`} text="Acompanhe suas compras, consulte os detalhes e solicite atendimento sem perder o histórico." />

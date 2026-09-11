@@ -26,7 +26,7 @@ function sessionFor(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   if (!sessionFor(request)) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
-  return NextResponse.json({ coupons: listCoupons() }, { headers: { "cache-control": "no-store" } });
+  return NextResponse.json({ coupons: await listCoupons() }, { headers: { "cache-control": "no-store" } });
 }
 
 export async function POST(request: NextRequest) {
@@ -39,12 +39,12 @@ export async function POST(request: NextRequest) {
     const raw = await request.json() as { action?: unknown };
     if (raw.action === "delete") {
       const input = deleteSchema.parse(raw);
-      deleteCoupon(input.code, session.email);
-      return NextResponse.json({ ok: true, coupons: listCoupons() });
+      await deleteCoupon(input.code, session.email);
+      return NextResponse.json({ ok: true, coupons: await listCoupons() });
     }
     const input = saveSchema.parse(raw);
-    const coupon = saveCoupon(input, session.email);
-    return NextResponse.json({ ok: true, coupon, coupons: listCoupons() });
+    const coupon = await saveCoupon(input, session.email);
+    return NextResponse.json({ ok: true, coupon, coupons: await listCoupons() });
   } catch (error) {
     const message = error instanceof z.ZodError ? error.issues[0]?.message || "Confira os dados do cupom." : "Não foi possível salvar o cupom.";
     return NextResponse.json({ error: message }, { status: 400 });

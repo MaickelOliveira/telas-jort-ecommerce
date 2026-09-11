@@ -18,8 +18,8 @@ export async function POST(request: NextRequest) {
   if (!sameOriginRequest(request)) return NextResponse.json({ error: "Origem inválida." }, { status: 403 });
   try {
     const input = schema.parse(await request.json());
-    const cart = calculateCart(input.items, getRuntimeProducts());
-    const result = validateCoupon(input.code, cart.subtotalCents);
+    const cart = calculateCart(input.items, await getRuntimeProducts());
+    const result = await validateCoupon(input.code, cart.subtotalCents);
     if (!result.valid) return NextResponse.json({ error: result.message }, { status: 422 });
     return NextResponse.json({ code: result.coupon.code, discountCents: result.discountCents, message: result.message }, { headers: { "cache-control": "no-store" } });
   } catch (error) {

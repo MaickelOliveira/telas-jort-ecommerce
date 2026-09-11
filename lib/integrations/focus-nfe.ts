@@ -1,7 +1,8 @@
 import "server-only";
 import { audit, beginFiscalDocument, getStoredOrderByPublicNumber, listStoredOrderItems, updateFiscalDocument } from "@/lib/database";
-import { getRuntimeProduct } from "@/lib/catalog-server";
+import { getRuntimeProducts } from "@/lib/catalog-server";
 import { getRuntimeIntegrationConfig } from "@/lib/integration-config";
+import type { StoreProduct } from "@/lib/types";
 
 type FocusResponse = {
   status?: string;
@@ -41,8 +42,7 @@ function normalizeStatus(result: FocusResponse): "processing" | "authorized" | "
   return "processing";
 }
 
-function fiscalQuantity(item: ReturnType<typeof listStoredOrderItems>[number]) {
-  const product = getRuntimeProduct(item.product_id);
+function fiscalQuantity(item: Awaited<ReturnType<typeof listStoredOrderItems>>[number], product?: StoreProduct) {
   if (product?.measurement.mode === "square_meter" && item.measurement?.areaM2) return Number((item.measurement.areaM2 * item.quantity).toFixed(4));
   if (product?.measurement.mode === "linear_meter" && item.measurement?.lengthM) return Number((item.measurement.lengthM * item.quantity).toFixed(4));
   return item.quantity;
@@ -53,17 +53,17 @@ function responseMessage(result: FocusResponse, fallback: string) {
 }
 
 export async function issueFiscalInvoiceForOrder(publicNumber: string) {
-  const config = getRuntimeIntegrationConfig("focus_nfe");
+  const config = await getRuntimeIntegrationConfig("focus_nfe");
   if (!config.enabled) return { ok: false as const, skipped: true as const, reason: "Integração fiscal desabilitada." };
-  const order = getStoredOrderByPublicNumber(publicNumber);
+  const order = await getStoredOrderByPublicNumber(publicNumber);
   if (!order || order.status !== "paid") return { ok: false as const, skipped: true as const, reason: "O pedido ainda não está pago." };
   const reference = `TJ-${order.public_number}`;
-  const reservation = beginFiscalDocument(order.id, reference);
+  const reservation = await beginFiscalDocument(order.id, reference);
   if (!reservation.started) return { ok: true as const, duplicate: true as const, status: reservation.document.status };
 
-  const fail = (message: string) => {
-    updateFiscalDocument(reference, { status: "error", errorMessage: message });
-    audit("system:fiscal", "fiscal.invoice_failed", order.public_number, { reference, message });
+  const fail = async (message: string) => {
+    await updateFiscalDocument(reference, { status: "error", errorMessage: message });
+    await audit("system:fiscal", "fiscal.invoice_failed", order.public_number, { reference, message });
     return { ok: false as const, reason: message };
   };
 
@@ -73,11 +73,15 @@ export async function issueFiscalInvoiceForOrder(publicNumber: string) {
     const token = config.secrets.token;
     if (!token || !/^\d{14}$/.test(issuerCnpj) || !/^[A-Z]{2}$/.test(issuerState)) return fail("Configuração fiscal incompleta: confira token, CNPJ e UF do emitente.");
 
-    const items = listStoredOrderItems(order.id);
+    const [items, products] = await Promise.all([
+      listStoredOrderItems(order.id),
+      getRuntimeProducts(),
+    ]);
+    const productsById = new Map(products.map((product) => [product.id, product]));
     if (!items.length) return fail("O pedido não possui itens para emissão fiscal.");
     let allocatedDiscount = 0;
     const fiscalItems = items.map((item, index) => {
-      const product = getRuntimeProduct(item.product_id);
+      const product = productsById.get(item.product_id);
       const fiscal = product?.fiscal || {};
       const ncm = digits(fiscal.ncm || config.publicConfig.defaultNcm);
       const cfop = digits(fiscal.cfop || config.publicConfig.defaultCfop);
@@ -89,7 +93,7 @@ export async function issueFiscalInvoiceForOrder(publicNumber: string) {
       if (!/^\d{8}$/.test(ncm) || !/^\d{4}$/.test(cfop) || !unit || !/^[0-8]$/.test(origin) || !icmsCst || !/^\d{2}$/.test(pisCst) || !/^\d{2}$/.test(cofinsCst)) {
         throw new Error(`Cadastro fiscal incompleto no produto ${item.sku}: informe NCM, CFOP, unidade, origem, ICMS, PIS e COFINS.`);
       }
-      const quantity = Math.max(0.0001, fiscalQuantity(item));
+      const quantity = Math.max(0.0001, fiscalQuantity(item, product));
       const discountCents = index === items.length - 1
         ? Math.max(0, order.discount_cents - allocatedDiscount)
         : Math.round(order.discount_cents * item.subtotal_cents / Math.max(1, order.subtotal_cents));
@@ -151,7 +155,7 @@ export async function issueFiscalInvoiceForOrder(publicNumber: string) {
       items: fiscalItems,
     };
 
-    updateFiscalDocument(reference, { status: "processing" });
+    await updateFiscalDocument(reference, { status: "processing" });
     let response = await fetch(`${base}/v2/nfe?ref=${encodeURIComponent(reference)}`, {
       method: "POST",
       headers: { authorization: `Basic ${Buffer.from(`${token}:`).toString("base64")}`, accept: "application/json", "content-type": "application/json" },
@@ -170,7 +174,7 @@ export async function issueFiscalInvoiceForOrder(publicNumber: string) {
     }
     if (!response.ok) return fail(responseMessage(result, `Focus NFe respondeu HTTP ${response.status}.`));
     const status = normalizeStatus(result);
-    updateFiscalDocument(reference, {
+    await updateFiscalDocument(reference, {
       status,
       accessKey: result.chave_nfe || null,
       number: result.numero ? String(result.numero) : null,
@@ -179,18 +183,18 @@ export async function issueFiscalInvoiceForOrder(publicNumber: string) {
       xmlUrl: absoluteUrl(base, result.caminho_xml_nota_fiscal),
       errorMessage: status === "error" ? responseMessage(result, "A SEFAZ rejeitou a emissão.") : null,
     });
-    audit("system:fiscal", `fiscal.invoice_${status}`, order.public_number, { reference });
+    await audit("system:fiscal", `fiscal.invoice_${status}`, order.public_number, { reference });
     return { ok: status !== "error", status, reference };
   } catch (error) {
     return fail(error instanceof Error ? error.message : "Falha inesperada na emissão fiscal.");
   }
 }
 
-export function syncFocusNfeWebhook(reference: string, result: FocusResponse) {
-  const config = getRuntimeIntegrationConfig("focus_nfe");
+export async function syncFocusNfeWebhook(reference: string, result: FocusResponse) {
+  const config = await getRuntimeIntegrationConfig("focus_nfe");
   const base = focusBase(config.environment);
   const status = normalizeStatus(result);
-  updateFiscalDocument(reference, {
+  await updateFiscalDocument(reference, {
     status,
     accessKey: result.chave_nfe || null,
     number: result.numero ? String(result.numero) : null,
@@ -199,6 +203,6 @@ export function syncFocusNfeWebhook(reference: string, result: FocusResponse) {
     xmlUrl: absoluteUrl(base, result.caminho_xml_nota_fiscal),
     errorMessage: status === "error" ? responseMessage(result, "A SEFAZ rejeitou a emissão.") : null,
   });
-  audit("webhook:focus_nfe", `fiscal.invoice_${status}`, reference);
+  await audit("webhook:focus_nfe", `fiscal.invoice_${status}`, reference);
   return status;
 }

@@ -83,17 +83,17 @@ function mergeProduct(base: StoreProduct | undefined, id: string, config: Record
   };
 }
 
-export function getRuntimeProducts() {
+export async function getRuntimeProducts() {
   const result = new Map(seedProducts.map((product) => [product.id, product]));
-  for (const stored of listProductConfigs()) result.set(stored.productId, mergeProduct(result.get(stored.productId), stored.productId, stored.config));
+  for (const stored of await listProductConfigs()) result.set(stored.productId, mergeProduct(result.get(stored.productId), stored.productId, stored.config));
   return [...result.values()];
 }
 
-export function getRuntimeProduct(slug: string) {
-  return getRuntimeProducts().find((product) => product.slug === slug || product.id === slug);
+export async function getRuntimeProduct(slug: string) {
+  return (await getRuntimeProducts()).find((product) => product.slug === slug || product.id === slug);
 }
 
-export function getRuntimeProductsByCategory(category?: string) {
-  const products = getRuntimeProducts().filter((product) => product.active);
+export async function getRuntimeProductsByCategory(category?: string) {
+  const products = (await getRuntimeProducts()).filter((product) => product.active);
   return !category || category === "Todos" ? products : products.filter((product) => product.category === category);
 }

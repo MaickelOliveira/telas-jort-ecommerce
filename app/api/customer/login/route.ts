@@ -13,14 +13,14 @@ export async function POST(request: NextRequest) {
   if (!sameOriginRequest(request)) return NextResponse.json({ error: "Origem inválida." }, { status: 403 });
   try {
     const input = schema.parse(await request.json());
-    const customer = getCustomerAccountByEmail(input.email);
+    const customer = await getCustomerAccountByEmail(input.email);
     if (!customer || !verifyPassword(input.password, customer.password_hash)) {
-      audit(input.email.toLowerCase(), "customer.login_failed");
+      await audit(input.email.toLowerCase(), "customer.login_failed");
       return NextResponse.json({ error: "E-mail ou senha incorretos." }, { status: 401 });
     }
     const response = NextResponse.json({ ok: true });
     response.cookies.set(customerCookie.name, createCustomerSession(customer.id, customer.email), customerCookie.options);
-    audit(customer.email, "customer.login_success", customer.id);
+    await audit(customer.email, "customer.login_success", customer.id);
     return response;
   } catch {
     return NextResponse.json({ error: "Dados de acesso inválidos." }, { status: 400 });

@@ -5,14 +5,14 @@ import { getStoreSettings } from "@/lib/store-settings";
 
 export const dynamic = "force-dynamic";
 
-export default function SettingsPage() {
-  const settings = getStoreSettings();
+export default async function SettingsPage() {
+  const settings = await getStoreSettings();
   const adminAccessConfigured = Boolean(process.env.ADMIN_EMAIL && (process.env.ADMIN_PASSWORD_HASH || process.env.ADMIN_PASSWORD));
   const checks = [
     { title: "HTTPS automático", description: process.env.APP_URL?.startsWith("https://") ? "Configurado para o domínio de produção" : "Será ativado pelo Caddy quando o domínio apontar para a VPS", ready: Boolean(process.env.APP_URL?.startsWith("https://")), icon: LockKeyhole },
     { title: "Dados pessoais cifrados", description: process.env.DATA_ENCRYPTION_KEY ? "Chave AES-256-GCM carregada no servidor" : "Chave de produção ainda não carregada", ready: Boolean(process.env.DATA_ENCRYPTION_KEY), icon: ShieldCheck },
     { title: "Acesso administrativo", description: adminAccessConfigured ? "E-mail e senha segura configurados" : "Configure ADMIN_EMAIL e ADMIN_PASSWORD no servidor", ready: adminAccessConfigured, icon: KeyRound },
-    { title: "Cópias de segurança", description: "O comando de backup está incluído; confirme o cron e a cópia externa na VPS", ready: false, icon: DatabaseBackup },
+    { title: "Banco e cópias de segurança", description: process.env.DATABASE_URL ? "Supabase conectado; confirme também a política de backup do projeto" : "DATABASE_URL do Supabase ainda não configurada", ready: Boolean(process.env.DATABASE_URL), icon: DatabaseBackup },
   ];
   return <div className="mx-auto max-w-[1200px]">
     <PageHeader eyebrow="Sistema" title="Configurações" description="Dados públicos da loja e situação das proteções de produção." />

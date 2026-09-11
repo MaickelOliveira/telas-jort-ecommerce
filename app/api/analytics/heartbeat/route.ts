@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
     const ua = request.headers.get("user-agent") || "";
     const device = /mobile|android|iphone/i.test(ua) ? "Celular" : /tablet|ipad/i.test(ua) ? "Tablet" : "Computador";
-    heartbeatVisitor({ visitorId, path, device, ipHash: anonymizeIp(forwarded) });
+    await heartbeatVisitor({ visitorId, path, device, ipHash: anonymizeIp(forwarded) });
     return new NextResponse(null, { status: 204 });
   } catch { return new NextResponse(null, { status: 400 }); }
 }

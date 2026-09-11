@@ -18,7 +18,7 @@ type MelhorEnvSlim = {
 
 export async function quoteShipping(postalCode: string, items: CartItem[], catalog: StoreProduct[]): Promise<{ options: ShippingOption[]; mode: "live" | "demo" | "pending_measurements" | "manual_quote"; warning?: string; manualQuote?: { url: string } }> {
   const cart = calculateCart(items, catalog);
-  const settings = getStoreSettings();
+  const settings = await getStoreSettings();
   const threshold = Number(settings.largeOrderQuantityThreshold) || 0;
   const totalQuantity = cart.lines.reduce((sum, line) => sum + line.quantity, 0);
   if (threshold > 0 && totalQuantity >= threshold) {
@@ -39,7 +39,7 @@ export async function quoteShipping(postalCode: string, items: CartItem[], catal
   const expires = Date.now() + 20 * 60_000;
   const pickupPayload = { id: "pickup", carrier: "Telas Jort", service: "Retirada na loja", priceCents: 0, deliveryDays: 0, postalCode, cartHash, exp: expires };
   const pickup: ShippingOption = { ...pickupPayload, quoteToken: createQuoteToken(pickupPayload), source: "pickup" };
-  const config = getRuntimeIntegrationConfig("melhor_envio");
+  const config = await getRuntimeIntegrationConfig("melhor_envio");
   const token = config.enabled ? config.secrets.token : undefined;
 
   if (!token) {

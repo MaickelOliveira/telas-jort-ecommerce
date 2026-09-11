@@ -5,7 +5,7 @@ const escapeXml = (value: string) => value.replace(/[<>&'\"]/g, (char) => ({ "<"
 
 export async function GET() {
   const origin = (process.env.APP_URL || "http://localhost:3000").replace(/\/$/, "");
-  const products = getRuntimeProducts();
+  const products = await getRuntimeProducts();
   const eligible = products.filter((product) => product.active && (product.measurement.mode === "unit" || product.measurement.mode === "fixed_roll"));
   const items = eligible.map((product) => `
     <item>

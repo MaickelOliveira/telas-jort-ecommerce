@@ -9,15 +9,19 @@ import { money } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
-export default function AdminDashboard() {
-  const analytics = getAdminAnalytics();
-  const visitors = getLiveVisitors().map((row) => ({
+export default async function AdminDashboard() {
+  const [analytics, liveVisitors, storedOrders] = await Promise.all([
+    getAdminAnalytics(),
+    getLiveVisitors(),
+    listStoredOrders(5),
+  ]);
+  const visitors = liveVisitors.map((row) => ({
     visitor_id: String(row.visitor_id),
     path: String(row.path),
     device: String(row.device),
     last_seen_at: String(row.last_seen_at),
   }));
-  const orders = listStoredOrders(5).map((row) => ({
+  const orders = storedOrders.map((row) => ({
     number: String(row.public_number),
     customer: String((row.customer as Record<string, string>)?.name || "Cliente"),
     city: String((row.customer as Record<string, string>)?.city || ""),

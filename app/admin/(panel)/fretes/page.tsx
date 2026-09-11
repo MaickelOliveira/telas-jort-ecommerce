@@ -9,9 +9,12 @@ import { getRuntimeIntegrationConfig } from "@/lib/integration-config";
 
 export const dynamic = "force-dynamic";
 
-export default function FreightPage() {
-  const connected = getRuntimeIntegrationConfig("melhor_envio").enabled;
-  const orders = listStoredOrders(500);
+export default async function FreightPage() {
+  const [config, orders] = await Promise.all([
+    getRuntimeIntegrationConfig("melhor_envio"),
+    listStoredOrders(500),
+  ]);
+  const connected = config.enabled;
   const paid = orders.filter((order) => order.status === "paid");
   const awaiting = paid.filter((order) => order.fulfillment_status === "unfulfilled").length;
   const inTransit = paid.filter((order) => /transit|trânsito|postado/i.test(order.fulfillment_status)).length;

@@ -9,16 +9,16 @@ import { getRuntimeProduct, getRuntimeProducts } from "@/lib/catalog-server";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const product = getRuntimeProduct(slug);
+  const product = await getRuntimeProduct(slug);
   return product ? { title: product.name, description: product.metaDescription } : { title: "Produto não encontrado" };
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const product = getRuntimeProduct(slug);
+  const product = await getRuntimeProduct(slug);
   if (!product) notFound();
 
-  const related = getRuntimeProducts()
+  const related = (await getRuntimeProducts())
     .filter((item) => item.active && item.category === product.category && item.id !== product.id)
     .slice(0, 8);
   const origin = (process.env.APP_URL || "http://localhost:3000").replace(/\/$/, "");

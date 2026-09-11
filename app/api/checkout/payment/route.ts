@@ -32,16 +32,17 @@ export async function POST(request: NextRequest) {
   if (!sameOriginRequest(request)) return NextResponse.json({ error: "Origem da solicitação inválida" }, { status: 403 });
   try {
     const session = parseCustomerSession(request.cookies.get(customerCookie.name)?.value);
-    const account = session ? getCustomerAccountById(session.customerId) : null;
+    const account = session ? await getCustomerAccountById(session.customerId) : null;
     if (!session || !account || account.email.toLowerCase() !== session.email) return NextResponse.json({ error: "Entre ou crie sua conta antes de finalizar a compra." }, { status: 401 });
     const input = schema.parse(await request.json());
     const quote = verifyQuoteToken(input.shipping.quoteToken, input.items);
     if (!quote) return NextResponse.json({ error: "A cotação do frete expirou. Calcule novamente." }, { status: 409 });
-    const cart = calculateCart(input.items, getRuntimeProducts());
-    const threshold = Number(getStoreSettings().largeOrderQuantityThreshold) || 0;
+    const [products, settings] = await Promise.all([getRuntimeProducts(), getStoreSettings()]);
+    const cart = calculateCart(input.items, products);
+    const threshold = Number(settings.largeOrderQuantityThreshold) || 0;
     const totalQuantity = cart.lines.reduce((sum, line) => sum + line.quantity, 0);
     if (threshold > 0 && totalQuantity >= threshold) return NextResponse.json({ error: "Este pedido precisa de cotação de frete pelo WhatsApp antes do pagamento." }, { status: 409 });
-    const couponResult = input.couponCode ? validateCoupon(input.couponCode, cart.subtotalCents) : null;
+    const couponResult = input.couponCode ? await validateCoupon(input.couponCode, cart.subtotalCents) : null;
     if (couponResult && !couponResult.valid) return NextResponse.json({ error: couponResult.message }, { status: 409 });
     const discountCents = couponResult?.valid ? couponResult.discountCents : 0;
     const totalCents = Math.max(100, cart.subtotalCents + quote.priceCents - discountCents);
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
       _metaClientIp: clientIp(request),
       _metaClientUserAgent: request.headers.get("user-agent") || "",
     } : {};
-    const order = createOrder({
+    const order = await createOrder({
       customerAccountId: account.id,
       customer: { ...input.customer, email: account.email, ...attribution },
       subtotalCents: cart.subtotalCents,
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
     });
     const paymentCustomer = { ...input.customer, email: account.email };
     const payment = await createMercadoPagoPayment({ orderPublicNumber: order.publicNumber, totalCents, customer: paymentCustomer, paymentData: input.paymentData });
-    updateOrderPayment(order.id, String(payment.status || "pending"), String(payment.id || ""), "mercado_pago");
+    await updateOrderPayment(order.id, String(payment.status || "pending"), String(payment.id || ""), "mercado_pago");
     const approved = ["approved", "paid"].includes(String(payment.status || "").toLowerCase());
     const isDemo = input.paymentData.demo === true;
     if (approved && !isDemo) after(() => issueFiscalInvoiceForOrder(order.publicNumber).catch((error) => console.error("Automatic NF-e issuance failed", error)));

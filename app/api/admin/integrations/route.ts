@@ -31,7 +31,6 @@ const allowedFields: Record<IntegrationProvider, { publicConfig: string[]; secre
   meta_conversions: { publicConfig: ["pixelId", "graphApiVersion", "testEventCode"], secrets: ["accessToken"] },
   google_ads: { publicConfig: ["conversionId", "purchaseLabel"], secrets: [] },
   focus_nfe: { publicConfig: ["issuerCnpj", "issuerState", "taxRegime", "natureOperation", "freightMode", "defaultCfop", "defaultNcm", "defaultUnit", "defaultOrigin", "defaultIcmsCst", "defaultPisCst", "defaultCofinsCst"], secrets: ["token", "webhookSecret"] },
-  supabase: { publicConfig: ["projectUrl", "publishableKey"], secrets: ["secretKey", "databaseUrl"] },
 };
 
 function filterFields(values: Record<string, string>, allowed: string[]) {
@@ -42,8 +41,8 @@ function sessionFor(request: NextRequest) {
   return parseSession(request.cookies.get(adminCookie.name)?.value);
 }
 
-function safeConfig(provider: IntegrationProvider) {
-  const config = getRuntimeIntegrationConfig(provider);
+async function safeConfig(provider: IntegrationProvider) {
+  const config = await getRuntimeIntegrationConfig(provider);
   return {
     provider: config.provider,
     enabled: config.enabled,
@@ -59,7 +58,7 @@ function safeConfig(provider: IntegrationProvider) {
 
 export async function GET(request: NextRequest) {
   if (!sessionFor(request)) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
-  return NextResponse.json({ integrations: listSafeRuntimeIntegrationConfigs() }, { headers: { "cache-control": "no-store" } });
+  return NextResponse.json({ integrations: await listSafeRuntimeIntegrationConfigs() }, { headers: { "cache-control": "no-store" } });
 }
 
 export async function POST(request: NextRequest) {
@@ -72,8 +71,8 @@ export async function POST(request: NextRequest) {
     if (raw?.action === "test") {
       const input = testSchema.parse(raw);
       const result = await testIntegrationConnection(input.provider);
-      saveIntegrationTest(input.provider, result.ok ? "success" : "failed", result.message, session.email);
-      return NextResponse.json({ ...result, config: safeConfig(input.provider) }, { status: result.ok ? 200 : 422 });
+      await saveIntegrationTest(input.provider, result.ok ? "success" : "failed", result.message, session.email);
+      return NextResponse.json({ ...result, config: await safeConfig(input.provider) }, { status: result.ok ? 200 : 422 });
     }
     if (session.role !== "owner") return NextResponse.json({ error: "Somente o proprietário pode alterar credenciais." }, { status: 403 });
     const input = saveSchema.parse(raw);
@@ -83,11 +82,8 @@ export async function POST(request: NextRequest) {
     if (input.provider === "carrier_direct" && publicConfig.apiBaseUrl && !/^https:\/\//i.test(publicConfig.apiBaseUrl)) {
       return NextResponse.json({ error: "A URL da transportadora precisa usar HTTPS." }, { status: 400 });
     }
-    if (input.provider === "supabase" && publicConfig.projectUrl && !/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(publicConfig.projectUrl)) {
-      return NextResponse.json({ error: "Informe a URL do projeto no formato https://seu-projeto.supabase.co." }, { status: 400 });
-    }
     if (input.enabled) {
-      const current = getRuntimeIntegrationConfig(input.provider);
+      const current = await getRuntimeIntegrationConfig(input.provider);
       const mergedSecrets = { ...current.secrets, ...Object.fromEntries(Object.entries(secrets).filter(([, value]) => value)) };
       const marketplaceCredentialsChanged = current.environment !== input.environment
         || JSON.stringify(current.publicConfig) !== JSON.stringify(publicConfig)
@@ -111,11 +107,10 @@ export async function POST(request: NextRequest) {
         const changed = current.environment !== input.environment || JSON.stringify(current.publicConfig) !== JSON.stringify(publicConfig) || Object.values(secrets).some(Boolean);
         if (current.lastTestStatus !== "success" || changed) return NextResponse.json({ error: "Salve com a emissão desabilitada, teste a conexão e depois habilite a configuração validada." }, { status: 400 });
       }
-      if (input.provider === "supabase") return NextResponse.json({ error: "Teste e salve as credenciais desabilitadas. A ativação será liberada somente depois de migrar e validar todas as tabelas." }, { status: 400 });
       if (["mercado_livre", "shopee"].includes(input.provider) && (current.lastTestStatus !== "success" || marketplaceCredentialsChanged)) return NextResponse.json({ error: "Salve com a integração desabilitada, clique em Testar conexão e somente depois habilite a conta validada." }, { status: 400 });
     }
-    saveIntegrationConfig({ provider: input.provider, enabled: input.enabled, environment: input.environment, publicConfig, secrets }, session.email);
-    return NextResponse.json({ ok: true, config: safeConfig(input.provider) });
+    await saveIntegrationConfig({ provider: input.provider, enabled: input.enabled, environment: input.environment, publicConfig, secrets }, session.email);
+    return NextResponse.json({ ok: true, config: await safeConfig(input.provider) });
   } catch (error) {
     const message = error instanceof z.ZodError ? "Confira os campos informados." : error instanceof Error ? error.message : "Não foi possível salvar a integração.";
     return NextResponse.json({ error: message }, { status: 400 });

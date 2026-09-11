@@ -12,14 +12,17 @@ import { paymentStatusLabel } from "@/lib/order-status";
 
 export const dynamic = "force-dynamic";
 
-export default function OrdersPage() {
-  let stored: ReturnType<typeof listStoredOrders> = [];
-  try { stored = listStoredOrders(); } catch { stored = []; }
-  const orders = stored.map((order) => {
-    const requests = listRefundRequestsForOrder(order.id);
+export default async function OrdersPage() {
+  let stored: Awaited<ReturnType<typeof listStoredOrders>> = [];
+  try { stored = await listStoredOrders(); } catch { stored = []; }
+  const orders = await Promise.all(stored.map(async (order) => {
+    const [requests, fiscalDocument] = await Promise.all([
+      listRefundRequestsForOrder(order.id),
+      getFiscalDocumentForOrder(order.id),
+    ]);
     const customerRequest = requests.find((request) => request.status === "requested" && request.requested_by.startsWith("customer:"));
-    return { ...order, customerRequest, fiscalDocument: getFiscalDocumentForOrder(order.id) };
-  });
+    return { ...order, customerRequest, fiscalDocument };
+  }));
 
   return <div className="mx-auto max-w-[1500px]">
     <PageHeader eyebrow="Operação" title="Pedidos" description="Acompanhe pagamentos, separação, etiquetas, entregas e solicitações de estorno." action={<Button asChild className="bg-[#17191b]"><a href="/api/admin/orders/export"><Download /> Exportar CSV</a></Button>} />

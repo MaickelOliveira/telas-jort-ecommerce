@@ -41,10 +41,12 @@ const values = {
   ADMIN_EMAIL: email,
   ADMIN_PASSWORD_HASH: hashPassword(password),
   SESSION_SECRET: randomBytes(48).toString("base64url"),
+  CUSTOMER_SESSION_SECRET: randomBytes(48).toString("base64url"),
   DATA_ENCRYPTION_KEY: randomBytes(32).toString("base64"),
   ANALYTICS_SALT: randomBytes(32).toString("base64url"),
   SHIPPING_QUOTE_SECRET: randomBytes(48).toString("base64url"),
-  DATABASE_PATH: "/app/data/telas-jort.sqlite",
+  DATABASE_URL: "COLE_AQUI_A_URL_SESSION_POOLER_DO_SUPABASE",
+  LEGACY_DATABASE_PATH: "/app/data/telas-jort.sqlite",
 };
 
 writeFileSync(destination, `${Object.entries(values).map(([key, value]) => `${key}=${value}`).join("\n")}\n`, { mode: 0o600 });

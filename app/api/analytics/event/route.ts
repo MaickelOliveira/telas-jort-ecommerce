@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
   if (!allowRequest(request, "analytics-event", 120, 60_000)) return new NextResponse(null, { status: 429 });
   try {
     const input = schema.parse(await request.json());
-    recordAnalyticsEvent(input.visitorId, input.event, input.path, input.metadata);
+    await recordAnalyticsEvent(input.visitorId, input.event, input.path, input.metadata);
     return new NextResponse(null, { status: 204 });
   } catch { return new NextResponse(null, { status: 400 }); }
 }

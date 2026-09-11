@@ -69,25 +69,14 @@ const environmentConfig: Partial<Record<IntegrationProvider, {
     },
     secrets: { token: process.env.FOCUS_NFE_TOKEN, webhookSecret: process.env.FOCUS_NFE_WEBHOOK_SECRET },
   },
-  supabase: {
-    environment: "production",
-    publicConfig: {
-      projectUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL,
-      publishableKey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-    },
-    secrets: {
-      secretKey: process.env.SUPABASE_SECRET_KEY,
-      databaseUrl: process.env.DATABASE_URL,
-    },
-  },
 };
 
 function compact(values?: Record<string, string | undefined>) {
   return Object.fromEntries(Object.entries(values || {}).filter((entry): entry is [string, string] => typeof entry[1] === "string" && entry[1].trim().length > 0));
 }
 
-export function getRuntimeIntegrationConfig(provider: IntegrationProvider): IntegrationConfig {
-  const stored = getIntegrationConfig(provider);
+export async function getRuntimeIntegrationConfig(provider: IntegrationProvider): Promise<IntegrationConfig> {
+  const stored = await getIntegrationConfig(provider);
   const env = environmentConfig[provider];
   const publicConfig = { ...compact(env?.publicConfig), ...(stored?.publicConfig || {}) };
   const secrets = { ...compact(env?.secrets), ...(stored?.secrets || {}) };
@@ -109,8 +98,6 @@ export function getRuntimeIntegrationConfig(provider: IntegrationProvider): Inte
                   ? Boolean(publicConfig.conversionId && publicConfig.purchaseLabel)
                   : provider === "focus_nfe"
                     ? false
-                  : provider === "supabase"
-                    ? false
                   : false;
   return {
     provider,
@@ -126,9 +113,9 @@ export function getRuntimeIntegrationConfig(provider: IntegrationProvider): Inte
   };
 }
 
-export function listSafeRuntimeIntegrationConfigs() {
-  return integrationProviders.map((provider) => {
-    const config = getRuntimeIntegrationConfig(provider);
+export async function listSafeRuntimeIntegrationConfigs() {
+  return Promise.all(integrationProviders.map(async (provider) => {
+    const config = await getRuntimeIntegrationConfig(provider);
     return {
       provider: config.provider,
       enabled: config.enabled,
@@ -140,5 +127,5 @@ export function listSafeRuntimeIntegrationConfigs() {
       lastTestedAt: config.lastTestedAt,
       updatedAt: config.updatedAt,
     };
-  });
+  }));
 }

@@ -35,7 +35,7 @@ export async function currentCustomerSession() {
 export async function currentCustomer() {
   const session = await currentCustomerSession();
   if (!session) return null;
-  const customer = getCustomerAccountById(session.customerId);
+  const customer = await getCustomerAccountById(session.customerId);
   return customer?.email.toLowerCase() === session.email ? customer : null;
 }
 

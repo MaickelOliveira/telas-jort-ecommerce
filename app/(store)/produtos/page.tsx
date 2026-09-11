@@ -49,7 +49,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   const sort = ["relevantes", "menor-preco", "maior-preco", "a-z"].includes(ordem)
     ? ordem
     : "relevantes";
-  const list = getRuntimeProductsByCategory(current)
+  const list = (await getRuntimeProductsByCategory(current))
     .filter((product) => !normalized || `${product.name} ${product.sku} ${product.category} ${product.subcategory}`.toLocaleLowerCase("pt-BR").includes(normalized));
 
   if (sort === "menor-preco") list.sort((a, b) => a.measurement.pricePerUnitCents - b.measurement.pricePerUnitCents);

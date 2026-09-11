@@ -28,8 +28,8 @@ function WhatsAppIcon() {
   );
 }
 
-export function StoreFooter() {
-  const store = getStoreSettings();
+export async function StoreFooter() {
+  const store = await getStoreSettings();
   const address = `${store.address}, ${store.number} - ${store.district}, ${store.city} - ${store.state}, ${store.postalCode}`;
 
   return (

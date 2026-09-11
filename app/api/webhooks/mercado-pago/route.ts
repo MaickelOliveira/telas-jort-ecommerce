@@ -7,8 +7,8 @@ import { sendMetaConversionEvent } from "@/lib/integrations/meta-conversions";
 import { issueFiscalInvoiceForOrder } from "@/lib/integrations/focus-nfe";
 
 export const runtime = "nodejs";
-function validSignature(request: NextRequest, dataId: string) {
-  const secret = getRuntimeIntegrationConfig("mercado_pago").secrets.webhookSecret;
+async function validSignature(request: NextRequest, dataId: string) {
+  const secret = (await getRuntimeIntegrationConfig("mercado_pago")).secrets.webhookSecret;
   if (!secret) return process.env.NODE_ENV !== "production";
   const signature = request.headers.get("x-signature") || "";
   const requestId = request.headers.get("x-request-id") || "";
@@ -24,21 +24,21 @@ export async function POST(request: NextRequest) {
   const url = new URL(request.url);
   const body = await request.json().catch(() => ({})) as { action?: string; type?: string; data?: { id?: string | number }; id?: string | number };
   const dataId = String(url.searchParams.get("data.id") || body.data?.id || body.id || "");
-  if (!dataId || !validSignature(request, dataId)) return NextResponse.json({ error: "Assinatura inválida" }, { status: 401 });
+  if (!dataId || !await validSignature(request, dataId)) return NextResponse.json({ error: "Assinatura inválida" }, { status: 401 });
   const eventId = `${body.action || body.type || "payment"}:${dataId}:${request.headers.get("x-request-id") || "unknown"}`;
-  if (!startWebhook("mercado_pago", eventId)) return NextResponse.json({ received: true, duplicate: true });
+  if (!await startWebhook("mercado_pago", eventId)) return NextResponse.json({ received: true, duplicate: true });
   try {
     const payment = await fetchMercadoPagoPayment(dataId);
     if (payment.external_reference) {
       const refundedCents = Math.round(Number(payment.transaction_amount_refunded || 0) * 100);
-      if (String(payment.status).toLowerCase() === "refunded") syncOrderRefundByPublicNumber(payment.external_reference);
-      else if (refundedCents > 0) syncOrderRefundByPublicNumber(payment.external_reference, refundedCents);
-      else updateOrderPaymentByPublicNumber(payment.external_reference, String(payment.status || "pending"), String(payment.id || dataId), "mercado_pago");
+      if (String(payment.status).toLowerCase() === "refunded") await syncOrderRefundByPublicNumber(payment.external_reference);
+      else if (refundedCents > 0) await syncOrderRefundByPublicNumber(payment.external_reference, refundedCents);
+      else await updateOrderPaymentByPublicNumber(payment.external_reference, String(payment.status || "pending"), String(payment.id || dataId), "mercado_pago");
       if (["approved", "paid"].includes(String(payment.status || "").toLowerCase())) {
-        const order = getStoredOrderByPublicNumber(payment.external_reference);
+        const order = await getStoredOrderByPublicNumber(payment.external_reference);
         if (order) after(() => issueFiscalInvoiceForOrder(order.public_number).catch((error) => console.error("Automatic NF-e issuance failed", error)));
         if (order?.customer._metaClientIp) {
-          const items = listStoredOrderItems(order.id);
+          const items = await listStoredOrderItems(order.id);
           const name = String(order.customer.name || "").trim().split(/\s+/);
           await sendMetaConversionEvent({
             eventName: "Purchase",
@@ -64,10 +64,10 @@ export async function POST(request: NextRequest) {
         }
       }
     }
-    finishWebhook("mercado_pago", eventId, "processed");
+    await finishWebhook("mercado_pago", eventId, "processed");
     return NextResponse.json({ received: true });
   } catch {
-    finishWebhook("mercado_pago", eventId, "failed");
+    await finishWebhook("mercado_pago", eventId, "failed");
     return NextResponse.json({ error: "Falha temporária" }, { status: 500 });
   }
 }

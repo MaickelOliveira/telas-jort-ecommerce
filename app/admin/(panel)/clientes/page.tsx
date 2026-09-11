@@ -6,8 +6,11 @@ import { money } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
-export default function ClientsPage() {
-  const orders = listStoredOrders(5000);
+export default async function ClientsPage() {
+  const [orders, accounts] = await Promise.all([
+    listStoredOrders(5000),
+    listCustomerAccounts(),
+  ]);
   const map = new Map<string, { name: string; email: string; phone: string; city: string; state: string; orders: number; total: number; last: string }>();
   for (const order of orders) {
     const customer = order.customer as Record<string, string>;
@@ -24,7 +27,6 @@ export default function ClientsPage() {
       last: current && new Date(current.last) > new Date(String(order.created_at)) ? current.last : String(order.created_at),
     });
   }
-  const accounts = listCustomerAccounts();
   for (const account of accounts) {
     const key = account.email.toLowerCase();
     if (!map.has(key)) map.set(key, { name: account.name, email: account.email, phone: account.phone, city: "", state: "", orders: 0, total: 0, last: account.created_at });

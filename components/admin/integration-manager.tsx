@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, Check, CheckCircle2, CircleAlert, Clipboard, CreditCard, Database, Download, ExternalLink, FileText, KeyRound, LoaderCircle, PackageCheck, Save, ShieldCheck, Store, TestTube2, Truck } from "lucide-react";
+import { Activity, Check, CheckCircle2, CircleAlert, Clipboard, CreditCard, ExternalLink, FileText, KeyRound, LoaderCircle, PackageCheck, Save, ShieldCheck, Store, TestTube2, Truck } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-type Provider = "mercado_pago" | "appmax" | "melhor_envio" | "google_merchant" | "carrier_direct" | "mercado_livre" | "shopee" | "meta_conversions" | "google_ads" | "focus_nfe" | "supabase";
+type Provider = "mercado_pago" | "appmax" | "melhor_envio" | "google_merchant" | "carrier_direct" | "mercado_livre" | "shopee" | "meta_conversions" | "google_ads" | "focus_nfe";
 export type SafeIntegrationConfig = {
   provider: Provider;
   enabled: boolean;
@@ -192,32 +192,13 @@ const definitions: Record<Provider, {
     docsUrl: "https://doc.focusnfe.com.br/reference/emitir_nfe",
     docsLabel: "Abrir documentação oficial da Focus NFe",
   },
-  supabase: {
-    title: "Supabase — PostgreSQL",
-    description: "Prepare a conexão do banco gerenciado que substituirá o arquivo SQLite atual da loja.",
-    icon: Database,
-    publicFields: [
-      { key: "projectUrl", label: "URL do projeto", placeholder: "https://seu-projeto.supabase.co", help: "Supabase → Project Settings → Data API." },
-      { key: "publishableKey", label: "Chave publicável", placeholder: "sb_publishable_...", help: "Pode ser usada no navegador somente com políticas RLS corretas." },
-    ],
-    secretFields: [
-      { key: "secretKey", label: "Chave secreta do servidor", placeholder: "sb_secret_...", secret: true, help: "Tem acesso elevado. Nunca será enviada ao navegador." },
-      { key: "databaseUrl", label: "String de conexão PostgreSQL", placeholder: "postgresql://postgres.PROJECT_REF:SENHA@HOST:5432/postgres", secret: true, help: "Copie em Connect → Session pooler e substitua o campo da senha." },
-    ],
-    note: "Salvar e testar estas credenciais ainda não move os dados. A plataforma continuará usando SQLite até as tabelas e os registros serem migrados e a conexão PostgreSQL ser ativada no servidor.",
-    docsUrl: "https://supabase.com/docs/guides/database/connecting-to-postgres",
-    docsLabel: "Abrir guia oficial de conexão",
-    activationLocked: true,
-    activationLabel: "Usar como banco principal",
-    activationHelp: "Liberado depois da migração e validação das tabelas",
-  },
 };
 
 function copy(value: string, label: string) {
   navigator.clipboard.writeText(value).then(() => toast.success(`${label} copiado`)).catch(() => toast.error("Não foi possível copiar."));
 }
 
-export function IntegrationManager({ initialConfigs, appUrl, defaultTab = "pagamentos" }: { initialConfigs: SafeIntegrationConfig[]; appUrl: string; defaultTab?: "pagamentos" | "fiscal" | "fretes" | "marketplaces" | "google" | "meta" | "database" }) {
+export function IntegrationManager({ initialConfigs, appUrl, defaultTab = "pagamentos" }: { initialConfigs: SafeIntegrationConfig[]; appUrl: string; defaultTab?: "pagamentos" | "fiscal" | "fretes" | "marketplaces" | "google" | "meta" }) {
   const [configs, setConfigs] = useState(initialConfigs);
   const byProvider = useMemo(() => Object.fromEntries(configs.map((config) => [config.provider, config])) as Record<Provider, SafeIntegrationConfig>, [configs]);
   const updateConfig = (config: SafeIntegrationConfig) => setConfigs((current) => current.map((item) => item.provider === config.provider ? config : item));
@@ -230,7 +211,6 @@ export function IntegrationManager({ initialConfigs, appUrl, defaultTab = "pagam
       <TabsTrigger className="admin-integration-tab h-11 rounded-xl px-4 font-bold focus-visible:border-transparent focus-visible:ring-0 focus-visible:outline-none data-[state=active]:bg-[#fff100] data-[state=active]:shadow-none" value="marketplaces"><Store /> Marketplaces</TabsTrigger>
       <TabsTrigger className="admin-integration-tab h-11 rounded-xl px-4 font-bold focus-visible:border-transparent focus-visible:ring-0 focus-visible:outline-none data-[state=active]:bg-[#fff100] data-[state=active]:shadow-none" value="google"><ExternalLink /> Google Shopping</TabsTrigger>
       <TabsTrigger className="admin-integration-tab h-11 rounded-xl px-4 font-bold focus-visible:border-transparent focus-visible:ring-0 focus-visible:outline-none data-[state=active]:bg-[#fff100] data-[state=active]:shadow-none" value="meta"><Activity /> Conversões</TabsTrigger>
-      <TabsTrigger className="admin-integration-tab h-11 rounded-xl px-4 font-bold focus-visible:border-transparent focus-visible:ring-0 focus-visible:outline-none data-[state=active]:bg-[#fff100] data-[state=active]:shadow-none" value="database"><Database /> Banco</TabsTrigger>
     </TabsList>
     <TabsContent value="pagamentos" className="admin-integration-grid grid items-stretch gap-5 xl:grid-cols-2">
       <IntegrationCard config={byProvider.mercado_pago} definition={definitions.mercado_pago} onUpdate={updateConfig} webhookUrl={`${appUrl}/api/webhooks/mercado-pago`} />
@@ -269,21 +249,6 @@ export function IntegrationManager({ initialConfigs, appUrl, defaultTab = "pagam
       <IntegrationCard config={byProvider.meta_conversions} definition={definitions.meta_conversions} onUpdate={updateConfig} />
       <IntegrationCard config={byProvider.google_ads} definition={definitions.google_ads} onUpdate={updateConfig} />
       <section className="rounded-3xl border border-zinc-200 bg-white p-6 xl:col-span-2"><div className="grid size-12 place-items-center rounded-2xl bg-[#fff100]"><Activity /></div><h3 className="mt-5 text-lg font-extrabold">Medição preparada com consentimento</h3><p className="mt-2 text-sm leading-6 text-zinc-500">Meta: PageView, ViewContent, AddToCart, InitiateCheckout, AddPaymentInfo e Purchase. Google Ads: tag em todas as páginas e conversão de compra com valor e transaction_id. O banner permite aceitar ou recusar cookies de marketing.</p></section>
-    </TabsContent>
-    <TabsContent value="database" className="admin-integration-grid grid items-stretch gap-5 xl:grid-cols-2">
-      <IntegrationCard config={byProvider.supabase} definition={definitions.supabase} onUpdate={updateConfig} />
-      <section className="flex h-full flex-col rounded-3xl border border-zinc-200 bg-white p-4 sm:p-6">
-        <div className="grid size-12 place-items-center rounded-2xl bg-[#fff100]"><Database /></div>
-        <h3 className="mt-5 text-lg font-extrabold">Onde encontrar cada dado</h3>
-        <ol className="mt-4 grid gap-4 text-sm leading-6 text-zinc-600">
-          <li><strong className="text-zinc-950">1. URL e chaves:</strong> abra o projeto no Supabase e acesse Project Settings → Data API e API Keys. Prefira as novas chaves <code>sb_publishable_...</code> e <code>sb_secret_...</code>.</li>
-          <li><strong className="text-zinc-950">2. String do banco:</strong> clique em Connect → Session pooler, copie a URI e coloque a senha real do banco no lugar indicado.</li>
-          <li><strong className="text-zinc-950">3. Teste:</strong> salve os dados e use “Testar conexão”. O teste confirma a URL e a chave do projeto sem expor o segredo.</li>
-          <li><strong className="text-zinc-950">4. Migração:</strong> depois do teste, as tabelas e os dados do SQLite precisam ser copiados para o PostgreSQL antes de ativar o Supabase.</li>
-        </ol>
-        <Button asChild className="mt-5 h-11 bg-[#fff100] font-extrabold text-black hover:bg-[#f3e500]"><a href="/api/admin/supabase/schema"><Download /> Baixar SQL completo</a></Button>
-        <p className="mt-auto rounded-xl bg-emerald-50 p-4 text-xs leading-5 text-emerald-900"><ShieldCheck className="mr-2 inline size-4" /> A chave secreta e a string de conexão ficam cifradas. Elas não aparecem novamente no painel nem são enviadas ao navegador.</p>
-      </section>
     </TabsContent>
   </Tabs>;
 }

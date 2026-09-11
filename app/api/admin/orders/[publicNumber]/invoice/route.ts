@@ -12,7 +12,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const session = parseSession(request.cookies.get(adminCookie.name)?.value);
   if (!session) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   const { publicNumber } = await params;
-  const order = getStoredOrderByPublicNumber(publicNumber);
+  const order = await getStoredOrderByPublicNumber(publicNumber);
   if (!order) return NextResponse.json({ error: "Pedido não encontrado" }, { status: 404 });
   if (order.status !== "paid") return NextResponse.json({ error: "A NF-e só pode ser emitida depois da aprovação do pagamento." }, { status: 409 });
   const result = await issueFiscalInvoiceForOrder(publicNumber);

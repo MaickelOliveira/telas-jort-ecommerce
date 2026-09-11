@@ -13,7 +13,7 @@ async function readError(response: Response) {
 }
 
 async function testMercadoPago(): Promise<TestResult> {
-  const config = getRuntimeIntegrationConfig("mercado_pago");
+  const config = await getRuntimeIntegrationConfig("mercado_pago");
   if (!config.secrets.accessToken || !config.publicConfig.publicKey) return { ok: false, message: "Informe a Public Key e o Access Token." };
   const response = await fetch("https://api.mercadopago.com/users/me", {
     headers: { authorization: `Bearer ${config.secrets.accessToken}` },
@@ -25,7 +25,7 @@ async function testMercadoPago(): Promise<TestResult> {
 }
 
 async function testAppmax(): Promise<TestResult> {
-  const config = getRuntimeIntegrationConfig("appmax");
+  const config = await getRuntimeIntegrationConfig("appmax");
   if (!config.secrets.clientId || !config.secrets.clientSecret) return { ok: false, message: "Informe o Client ID e o Client Secret do merchant." };
   const authBase = config.environment === "production" ? "https://auth.appmax.com.br" : "https://auth.sandboxappmax.com.br";
   const body = new URLSearchParams({ grant_type: "client_credentials", client_id: config.secrets.clientId, client_secret: config.secrets.clientSecret });
@@ -42,7 +42,7 @@ async function testAppmax(): Promise<TestResult> {
 }
 
 async function testMelhorEnvio(): Promise<TestResult> {
-  const config = getRuntimeIntegrationConfig("melhor_envio");
+  const config = await getRuntimeIntegrationConfig("melhor_envio");
   if (!config.secrets.token) return { ok: false, message: "Informe o token do Melhor Envio." };
   if (!/^\d{8}$/.test((config.publicConfig.originPostalCode || "").replace(/\D/g, ""))) return { ok: false, message: "Informe o CEP de origem com 8 números." };
   const base = config.environment === "production" ? "https://melhorenvio.com.br/api/v2" : "https://sandbox.melhorenvio.com.br/api/v2";
@@ -68,7 +68,7 @@ async function testMelhorEnvio(): Promise<TestResult> {
 }
 
 async function testMercadoLivre(): Promise<TestResult> {
-  const config = getRuntimeIntegrationConfig("mercado_livre");
+  const config = await getRuntimeIntegrationConfig("mercado_livre");
   if (!config.publicConfig.appId || !config.secrets.clientSecret || !config.secrets.accessToken) {
     return { ok: false, message: "Informe App ID, Client Secret e Access Token do Mercado Livre." };
   }
@@ -83,7 +83,7 @@ async function testMercadoLivre(): Promise<TestResult> {
 }
 
 async function testShopee(): Promise<TestResult> {
-  const config = getRuntimeIntegrationConfig("shopee");
+  const config = await getRuntimeIntegrationConfig("shopee");
   const partnerId = Number(config.publicConfig.partnerId);
   const shopId = Number(config.publicConfig.shopId);
   const partnerKey = config.secrets.partnerKey;
@@ -109,7 +109,7 @@ async function testShopee(): Promise<TestResult> {
 }
 
 async function testMetaConversions(): Promise<TestResult> {
-  const config = getRuntimeIntegrationConfig("meta_conversions");
+  const config = await getRuntimeIntegrationConfig("meta_conversions");
   const pixelId = config.publicConfig.pixelId;
   const token = config.secrets.accessToken;
   const testEventCode = config.publicConfig.testEventCode;
@@ -140,32 +140,8 @@ async function testMetaConversions(): Promise<TestResult> {
   return { ok: true, message: "Pixel e API de Conversões validados. O evento apareceu no modo de teste da Meta." };
 }
 
-async function testSupabase(): Promise<TestResult> {
-  const config = getRuntimeIntegrationConfig("supabase");
-  const projectUrl = config.publicConfig.projectUrl?.replace(/\/$/, "");
-  const publishableKey = config.publicConfig.publishableKey;
-  const secretKey = config.secrets.secretKey;
-  const databaseUrl = config.secrets.databaseUrl;
-  if (!projectUrl || !/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(projectUrl)) {
-    return { ok: false, message: "Informe a URL do projeto no formato https://seu-projeto.supabase.co." };
-  }
-  if (!publishableKey || !secretKey || !databaseUrl) {
-    return { ok: false, message: "Informe a chave publicável, a chave secreta do servidor e a string de conexão PostgreSQL." };
-  }
-  if (!/^postgres(?:ql)?:\/\//i.test(databaseUrl) || /\[(?:YOUR-PASSWORD|SUA-SENHA|PASSWORD)\]/i.test(databaseUrl)) {
-    return { ok: false, message: "A string PostgreSQL precisa estar completa e conter a senha real do banco." };
-  }
-  const response = await fetch(`${projectUrl}/rest/v1/`, {
-    headers: { apikey: secretKey, accept: "application/json" },
-    cache: "no-store",
-    signal: AbortSignal.timeout(12_000),
-  });
-  if (!response.ok) return { ok: false, message: `Supabase recusou a URL ou a chave secreta: ${await readError(response)}` };
-  return { ok: true, message: "Projeto Supabase autenticado. A string PostgreSQL foi validada no formato; falta executar o SQL e migrar os dados antes da ativação." };
-}
-
 async function testFocusNfe(): Promise<TestResult> {
-  const config = getRuntimeIntegrationConfig("focus_nfe");
+  const config = await getRuntimeIntegrationConfig("focus_nfe");
   const token = config.secrets.token;
   const cnpj = (config.publicConfig.issuerCnpj || "").replace(/\D/g, "");
   if (!token || !/^\d{14}$/.test(cnpj)) return { ok: false, message: "Informe o token da Focus NFe e o CNPJ do emitente com 14 números." };
@@ -188,15 +164,14 @@ export async function testIntegrationConnection(provider: IntegrationProvider): 
   if (provider === "shopee") return testShopee();
   if (provider === "meta_conversions") return testMetaConversions();
   if (provider === "focus_nfe") return testFocusNfe();
-  if (provider === "supabase") return testSupabase();
   if (provider === "google_ads") {
-    const config = getRuntimeIntegrationConfig(provider);
+    const config = await getRuntimeIntegrationConfig(provider);
     return /^AW-\d{5,30}$/.test(config.publicConfig.conversionId || "") && /^[A-Za-z0-9_-]{5,100}$/.test(config.publicConfig.purchaseLabel || "")
       ? { ok: true, message: "Formato da Google tag e do rótulo de compra validados. Confirme o recebimento final em Diagnóstico da ação de conversão." }
       : { ok: false, message: "Informe o ID no formato AW-123456789 e o rótulo da conversão de compra." };
   }
   if (provider === "google_merchant") {
-    const config = getRuntimeIntegrationConfig(provider);
+    const config = await getRuntimeIntegrationConfig(provider);
     return config.publicConfig.merchantId
       ? { ok: true, message: "ID salvo. A validação final do domínio é feita no Merchant Center." }
       : { ok: false, message: "Informe o ID do Merchant Center." };
