@@ -56,6 +56,8 @@ No EasyPanel também é possível informar somente `ADMIN_EMAIL` e `ADMIN_PASSWO
 
 ## Publicar na VPS
 
+Para PostgreSQL nativo no Easypanel, consulte [a migração documentada](db/MIGRACAO-EASYPANEL.md). O aplicativo também aceita Supabase. A conexão exige TLS por padrão; `DATABASE_SSL=disable` é reservado à rede privada do Easypanel, sem publicar a porta do banco.
+
 Siga [GUIA-VPS.md](./GUIA-VPS.md). O fluxo resumido é:
 
 ```bash

@@ -5,7 +5,7 @@ import postgres from "postgres";
 
 const connectionString = process.env.DATABASE_URL?.trim();
 if (!connectionString || connectionString.includes("COLE_AQUI")) {
-  throw new Error("DATABASE_URL do Supabase não foi configurada.");
+  throw new Error("DATABASE_URL do PostgreSQL não foi configurada.");
 }
 
 const legacyFile = process.env.LEGACY_DATABASE_PATH
@@ -16,7 +16,7 @@ const markerFile = `${legacyFile}.migrated-to-postgres`;
 if (existsSync(legacyFile) && !existsSync(markerFile)) {
   const source = new DatabaseSync(legacyFile, { readOnly: true });
   const target = postgres(connectionString, {
-    ssl: "require",
+    ssl: process.env.DATABASE_SSL === "disable" ? false : "require",
     max: 1,
     idle_timeout: 5,
     connect_timeout: 15,
@@ -77,7 +77,7 @@ if (existsSync(legacyFile) && !existsSync(markerFile)) {
       }
     });
     writeFileSync(markerFile, `${new Date().toISOString()}\n`, { mode: 0o600 });
-    console.log("[database] Migração do SQLite para o Supabase concluída.");
+    console.log("[database] Migração do SQLite para o PostgreSQL concluída.");
   } finally {
     source.close();
     await target.end({ timeout: 5 });

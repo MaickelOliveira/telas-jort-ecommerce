@@ -7,10 +7,10 @@ type DbGlobal = typeof globalThis & { __telasJortPostgres?: Sql };
 
 export function getDatabase() {
   const connectionString = process.env.DATABASE_URL?.trim();
-  if (!connectionString) throw new Error("DATABASE_URL não configurada. Informe a conexão Session pooler do Supabase no EasyPanel.");
+  if (!connectionString) throw new Error("DATABASE_URL não configurada. Informe a conexão PostgreSQL no EasyPanel.");
   const globals = globalThis as DbGlobal;
   globals.__telasJortPostgres ??= postgres(connectionString, {
-    ssl: "require", max: 10, idle_timeout: 20, connect_timeout: 15, prepare: false,
+    ssl: process.env.DATABASE_SSL === "disable" ? false : "require", max: 10, idle_timeout: 20, connect_timeout: 15, prepare: false,
   });
   return globals.__telasJortPostgres;
 }

@@ -32,6 +32,7 @@ COPY --from=dependencies --chown=nextjs:nodejs /runtime-node-modules/postgres ./
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/backup-database.mjs ./scripts/backup-database.mjs
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/migrate-sqlite-to-postgres.mjs ./scripts/migrate-sqlite-to-postgres.mjs
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/start-server.mjs ./scripts/start-server.mjs
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/transfer-postgres.mjs ./scripts/transfer-postgres.mjs
 USER nextjs
 EXPOSE 3000
 CMD ["node", "scripts/start-server.mjs"]
